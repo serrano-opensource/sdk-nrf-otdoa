@@ -13,12 +13,16 @@ if LOCATION
 
 config LOCATION_METHOD_GNSS
 	bool "Allow GNSS to be used for obtaining the location"
-	default y
+	default y 
+
+config LOCATION_METHOD_OTDOA
+       	bool "Allow OTDOA to be used for obtaining the location"
+	default y 
 
 config LOCATION_METHOD_CELLULAR
 	bool "Allow cellular positioning to be used for obtaining the location"
 	select CJSON_LIB if !LOCATION_SERVICE_EXTERNAL
-	default y
+	default n 
 
 config LOCATION_METHOD_WIFI
 	bool "Allow Wi-Fi positioning to be used for obtaining the location"
@@ -28,10 +32,11 @@ config LOCATION_METHOD_WIFI
 	select NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
 	select NET_L2_WIFI_MGMT
+        default n
 
 config LOCATION_METHODS_LIST_SIZE
 	int "Maximum number of location methods in configuration"
-	default 3
+	default 4 
 	help
 	  Maximum number of location methods within location_config structure.
 
@@ -64,6 +69,17 @@ config LOCATION_METHOD_GNSS_VISIBILITY_DETECTION_SAT_LIMIT
 	  GNSS acquires satellites more slowly.
 
 endif # LOCATION_METHOD_GNSS
+
+if LOCATION_METHOD_OTDOA
+
+config LOCATION_REQUEST_DEFAULT_OTDOA_TIMEOUT
+        int "Default OTDOA timeout in milliseconds"
+        default 30000
+        help
+          Default value used in location_config_defaults_set() function for timeout
+          member within location_otdoa_config structure.
+
+endif # LOCATION_METHOD_OTDOA
 
 if LOCATION_METHOD_WIFI
 
@@ -156,6 +172,7 @@ config LOCATION_SERVICE_EXTERNAL
 choice LOCATION_REQUEST_DEFAULT_METHOD_FIRST
 	prompt "Default first priority method"
 	default LOCATION_REQUEST_DEFAULT_METHOD_FIRST_GNSS if LOCATION_METHOD_GNSS
+	default LOCATION_REQUEST_DEFAULT_METHOD_FIRST_OTDOA if LOCATION_METHOD_OTDOA
 	default LOCATION_REQUEST_DEFAULT_METHOD_FIRST_WIFI if LOCATION_METHOD_WIFI
 	default LOCATION_REQUEST_DEFAULT_METHOD_FIRST_CELLULAR if LOCATION_METHOD_CELLULAR
 	help
@@ -164,6 +181,8 @@ choice LOCATION_REQUEST_DEFAULT_METHOD_FIRST
 
 	config LOCATION_REQUEST_DEFAULT_METHOD_FIRST_GNSS
 		bool "GNSS positioning"
+        config LOCATION_REQUEST_DEFAULT_METHOD_FIRST_OTDOA
+                bool "OTDOA positioning"
 	config LOCATION_REQUEST_DEFAULT_METHOD_FIRST_WIFI
 		bool "Wi-Fi positioning"
 	config LOCATION_REQUEST_DEFAULT_METHOD_FIRST_CELLULAR

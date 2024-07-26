@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(location, CONFIG_LOCATION_LOG_LEVEL);
 
 BUILD_ASSERT(
 	IS_ENABLED(CONFIG_LOCATION_METHOD_GNSS) ||
+	IS_ENABLED(CONFIG_LOCATION_METHOD_OTDOA) ||
 	IS_ENABLED(CONFIG_LOCATION_METHOD_CELLULAR) ||
 	IS_ENABLED(CONFIG_LOCATION_METHOD_WIFI),
 	"At least one location method must be enabled");
@@ -40,6 +41,21 @@ BUILD_ASSERT(
 	!IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_THIRD_GNSS),
 	"CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_THIRD_GNSS must be disabled when "
 	"CONFIG_LOCATION_METHOD_GNSS is disabled");
+#endif
+
+#if !defined(CONFIG_LOCATION_METHOD_OTDOA)
+BUILD_ASSERT(
+	!IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_FIRST_OTDOA),
+	"CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_FIRST_OTDOA must be disabled when "
+	"CONFIG_LOCATION_METHOD_OTDOA is disabled");
+BUILD_ASSERT(
+	!IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_SECOND_OTDOA),
+	"CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_SECOND_OTDOA must be disabled when "
+	"CONFIG_LOCATION_METHOD_OTDOA is disabled");
+BUILD_ASSERT(
+	!IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_THIRD_OTDOA),
+	"CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_THIRD_OTDOA must be disabled when "
+	"CONFIG_LOCATION_METHOD_OTDOA is disabled");
 #endif
 
 #if !defined(CONFIG_LOCATION_METHOD_CELLULAR)
@@ -83,6 +99,7 @@ static bool initialized;
 
 static const char LOCATION_METHOD_CELLULAR_STR[] = "Cellular";
 static const char LOCATION_METHOD_GNSS_STR[] = "GNSS";
+static const char LOCATION_METHOD_OTDOA_STR[] = "OTDOA";
 static const char LOCATION_METHOD_WIFI_STR[] = "Wi-Fi";
 static const char LOCATION_METHOD_INTERNAL_WIFI_CELLULAR_STR[] = "Wi-Fi + Cellular";
 static const char LOCATION_METHOD_UNKNOWN_STR[] = "Unknown";
@@ -190,6 +207,11 @@ static void location_config_method_defaults_set(
 		method->gnss.priority_mode =
 			IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_GNSS_PRIORITY_MODE);
 #endif
+	} else if (method_type == LOCATION_METHOD_OTDOA) {
+#if defined(CONFIG_LOCATION_METHOD_OTDOA)
+		method->otdoa.timeout = CONFIG_LOCATION_REQUEST_DEFAULT_OTDOA_TIMEOUT;
+		method->otdoa.service = LOCATION_SERVICE_ANY;
+#endif		
 	} else if (method_type == LOCATION_METHOD_CELLULAR) {
 #if defined(CONFIG_LOCATION_METHOD_CELLULAR)
 		method->cellular.timeout = CONFIG_LOCATION_REQUEST_DEFAULT_CELLULAR_TIMEOUT;
@@ -232,6 +254,9 @@ void location_config_defaults_set(
 		if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_FIRST_GNSS)) {
 			method_types_tmp[0] = LOCATION_METHOD_GNSS;
 			methods_count++;
+		} else if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_FIRST_OTDOA)) {
+			method_types_tmp[0] = LOCATION_METHOD_OTDOA;
+			methods_count++;
 		} else if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_FIRST_WIFI)) {
 			method_types_tmp[0] = LOCATION_METHOD_WIFI;
 			methods_count++;
@@ -243,6 +268,9 @@ void location_config_defaults_set(
 		if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_SECOND_GNSS)) {
 			method_types_tmp[1] = LOCATION_METHOD_GNSS;
 			methods_count++;
+		} else if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_SECOND_OTDOA)) {
+			method_types_tmp[1] = LOCATION_METHOD_OTDOA;
+			methods_count++;
 		} else if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_SECOND_WIFI)) {
 			method_types_tmp[1] = LOCATION_METHOD_WIFI;
 			methods_count++;
@@ -253,6 +281,9 @@ void location_config_defaults_set(
 
 		if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_THIRD_GNSS)) {
 			method_types_tmp[2] = LOCATION_METHOD_GNSS;
+			methods_count++;
+		} else if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_THIRD_OTDOA)) {
+			method_types_tmp[2] = LOCATION_METHOD_OTDOA;
 			methods_count++;
 		} else if (IS_ENABLED(CONFIG_LOCATION_REQUEST_DEFAULT_METHOD_THIRD_WIFI)) {
 			method_types_tmp[2] = LOCATION_METHOD_WIFI;
@@ -278,6 +309,9 @@ const char *location_method_str(enum location_method method)
 
 	case LOCATION_METHOD_GNSS:
 		return LOCATION_METHOD_GNSS_STR;
+
+	case LOCATION_METHOD_OTDOA:
+		return LOCATION_METHOD_OTDOA_STR;
 
 	case LOCATION_METHOD_WIFI:
 		return LOCATION_METHOD_WIFI_STR;

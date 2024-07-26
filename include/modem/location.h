@@ -42,6 +42,10 @@ enum location_method {
 	LOCATION_METHOD_GNSS,
 	/** Wi-Fi positioning. */
 	LOCATION_METHOD_WIFI,
+	//BILL@SerranoSystems Added-Start.
+	/** OTDOA positioning. */
+	LOCATION_METHOD_OTDOA,
+	//Bill@SerranoSystems Added-End.
 };
 
 /** Location acquisition mode. */
@@ -383,6 +387,37 @@ struct location_wifi_config {
 	enum location_service service;
 };
 
+
+//BILL@SerranoSystems Added-Start.
+/** OTDOA positioning configuration. */
+struct location_otdoa_config {
+	/**
+	 * @brief Timeout (in milliseconds) of how long the OTDOA positioning procedure can take.
+	 * SYS_FOREVER_MS means that the timer is disabled.
+	 *
+	 * @details Default value is 30000 (30 seconds). It is applied when
+	 * @ref location_config_defaults_set function is called and can be changed
+	 * at build time with CONFIG_LOCATION_REQUEST_DEFAULT_OTDOA_TIMEOUT configuration.
+	 *
+	 * When CONFIG_LOCATION_SERVICE_EXTERNAL is enabled, this timeout stops when
+	 * event LOCATION_EVT_CLOUD_LOCATION_EXT_REQUEST is sent. However, timeout specified in
+	 * @ref location_config structure is still valid.
+	 */
+	int32_t timeout;
+
+	/**
+	 * @brief Used OTDOA positioning service.
+	 *
+	 * @details Default value is LOCATION_SERVICE_ANY. It is applied when
+	 * @ref location_config_defaults_set function is called.
+	 *
+	 * This parameter is ignored when CONFIG_LOCATION_SERVICE_EXTERNAL is enabled.
+	 */
+	enum location_service service;
+};
+//BILL@SerranoSystems Added-End.
+
+
 /** Location method configuration. */
 struct location_method_config {
 	/** Location method. */
@@ -394,6 +429,10 @@ struct location_method_config {
 		struct location_gnss_config gnss;
 		/** Configuration for LOCATION_METHOD_WIFI. */
 		struct location_wifi_config wifi;
+	        //BILL@SerranoSystems Added-Start.
+		/** Configuration for LOCATION_METHOD_OTDOA. */
+		struct location_otdoa_config otdoa;
+	        //BILL@SerranoSystems Added-End.
 	};
 };
 

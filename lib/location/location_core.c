@@ -14,6 +14,9 @@
 #if defined(CONFIG_LOCATION_METHOD_GNSS)
 #include "method_gnss.h"
 #endif
+#if defined(CONFIG_LOCATION_METHOD_OTDOA)
+#include "method_otdoa.h"
+#endif
 #if defined(CONFIG_LOCATION_METHOD_CELLULAR)
 #include "scan_cellular.h"
 #endif
@@ -86,6 +89,21 @@ static const struct location_method_api method_gnss_api = {
 };
 #endif
 
+#if defined(CONFIG_LOCATION_METHOD_OTDOA)
+/** OTDOA location method configuration. */
+static const struct location_method_api method_otdoa_api = {
+        .method           = LOCATION_METHOD_OTDOA,
+        .method_string    = "OTDOA",
+        .init             = method_otdoa_init,
+        .location_get     = method_otdoa_location_get,
+        .cancel           = method_otdoa_cancel,
+        .timeout          = method_otdoa_timeout,
+#if defined(CONFIG_LOCATION_DATA_DETAILS)
+        .details_get      = method_otdoa_details_get,
+#endif
+};
+#endif 
+
 #if defined(CONFIG_LOCATION_METHOD_CELLULAR)
 /** Cellular location method configuration. */
 static const struct location_method_api method_cellular_api = {
@@ -140,6 +158,9 @@ static const struct location_method_api method_cloud_location_api = {
 static const struct location_method_api *methods_supported[] = {
 #if defined(CONFIG_LOCATION_METHOD_GNSS)
 	&method_gnss_api,
+#endif
+#if defined(CONFIG_LOCATION_METHOD_OTDOA)
+	&method_otdoa_api,
 #endif
 #if defined(CONFIG_LOCATION_METHOD_CELLULAR)
 	&method_cellular_api,
@@ -330,6 +351,11 @@ void location_core_config_log(const struct location_config *config)
 			LOG_DBG("      Accuracy: %s (%d)",
 				location_core_gnss_accuracy_str(config->methods[i].gnss.accuracy),
 				config->methods[i].gnss.accuracy);
+		} else if (type == LOCATION_METHOD_OTDOA) {
+			LOG_DBG("      Timeout: %dms", config->methods[i].otdoa.timeout);
+			LOG_DBG("      Service: %s (%d)",
+				location_core_service_str(config->methods[i].otdoa.service),
+				config->methods[i].otdoa.service);
 		} else if (type == LOCATION_METHOD_CELLULAR) {
 			LOG_DBG("      Timeout: %dms", config->methods[i].cellular.timeout);
 			LOG_DBG("      Service: %s (%d)",
@@ -408,6 +434,8 @@ static void location_request_info_create(const struct location_config *config)
 			method_wifi_index = i;
 		} else if (loc_req_info.config.methods[i].method == LOCATION_METHOD_GNSS) {
 			loc_req_info.gnss = &loc_req_info.config.methods[i].gnss;
+		} else if (loc_req_info.config.methods[i].method == LOCATION_METHOD_OTDOA) {
+			loc_req_info.otdoa = &loc_req_info.config.methods[i].otdoa;
 		}
 	}
 

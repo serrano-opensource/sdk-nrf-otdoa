@@ -33,11 +33,43 @@ static void lte_event_handler(const struct lte_lc_evt *const evt)
 			k_sem_give(&lte_connected);
 		}
 		break;
+	case LTE_LC_EVT_PSM_UPDATE:
+		printk("LTE_LC_EVT_PSM_UPDATE\n");
+		break;
+	case LTE_LC_EVT_EDRX_UPDATE:
+		printk("LTE_LC_EVT_EDRX_UPDATE\n");
+		break;	
+	case LTE_LC_EVT_RRC_UPDATE:
+		printk("LTE_LC_EVT_RRC_UPDATE\n");
+			break;	
+	case LTE_LC_EVT_CELL_UPDATE:
+		printk("LTE_LC_EVT_CELL_UPDATE\n");
+		break;		
+	case LTE_LC_EVT_LTE_MODE_UPDATE:
+		printk("LTE_LC_EVT_MODE_UPDATE\n");
+		break;	
+	case LTE_LC_EVT_TAU_PRE_WARNING:
+		printk("LTE_LC_TAU_PRE_WARNING\n");
+		break;		
+	case LTE_LC_EVT_NEIGHBOR_CELL_MEAS:
+		printk("LTE_LC_EVT_NEIGHBOR_CELL_MEAS\n");
+		break;	
+	case LTE_LC_EVT_MODEM_SLEEP_EXIT_PRE_WARNING:
+		printk("LTE_LC_EVT_MODEM_SLEEP_EXIT_PRE_WARNING\n");
+		break;			
+	case LTE_LC_EVT_MODEM_SLEEP_EXIT:
+		printk("LTE_LC_EVT_MODEM_SLEEP_EXIT\n");
+		break;	
+	case LTE_LC_EVT_MODEM_SLEEP_ENTER:
+		printk("LTE_LC_EVT_MODEM_SLEEP_ENTER\n");
+		break;	
+	case LTE_LC_EVT_MODEM_EVENT:
+		printk("LTE_LC_EVT_MODEM_EVENT\n");
+		break;			
 	default:
 		break;
 	}
 }
-
 static void location_event_handler(const struct location_event_data *event_data)
 {
 	switch (event_data->id) {
@@ -63,11 +95,11 @@ static void location_event_handler(const struct location_event_data *event_data)
 		break;
 
 	case LOCATION_EVT_TIMEOUT:
-		printk("Getting location timed out\n\n");
+		printk("Getting location timed out -> LOCATION_EVT_TIMEOUT.\n\n");
 		break;
 
 	case LOCATION_EVT_ERROR:
-		printk("Getting location failed\n\n");
+		printk("Getting location failed    -> LOCATION_EVT_ERROR.\n\n");
 		break;
 
 	case LOCATION_EVT_GNSS_ASSISTANCE_REQUEST:
@@ -186,6 +218,28 @@ static void location_gnss_high_accuracy_get(void)
 	location_event_wait();
 }
 
+/**
+ * @brief Retrieve location with OTDOA.
+ */
+static void location_otdoa_get(void)
+{
+    int err;
+    struct location_config config;
+	enum location_method methods[] = {LOCATION_METHOD_OTDOA};
+
+        location_config_defaults_set(&config, ARRAY_SIZE(methods), methods);
+
+	printk("Requesting OTDOA location...\n");
+
+        err = location_request(&config);
+        if (err) {
+                printk("Requesting location failed, error: %d\n", err);
+                return;
+        }
+	location_event_wait();
+}
+
+
 #if defined(CONFIG_LOCATION_METHOD_WIFI)
 /**
  * @brief Retrieve location with Wi-Fi positioning as first priority, GNSS as second
@@ -221,7 +275,8 @@ static void location_gnss_periodic_get(void)
 {
 	int err;
 	struct location_config config;
-	enum location_method methods[] = {LOCATION_METHOD_GNSS, LOCATION_METHOD_CELLULAR};
+	printk("in %s using LOCATION_METHOD_OTDOA for periodic.\n",__FUNCTION__);
+	enum location_method methods[] = {LOCATION_METHOD_OTDOA,LOCATION_METHOD_GNSS};
 
 	location_config_defaults_set(&config, ARRAY_SIZE(methods), methods);
 	config.interval = 30;
@@ -286,19 +341,21 @@ int main(void)
 	/* The fallback case is run first, otherwise GNSS might get a fix even with a 1 second
 	 * timeout.
 	 */
-	location_with_fallback_get();
+	//location_with_fallback_get();
 
-	location_default_get();
+	//location_default_get();
+	
 
-	location_gnss_low_accuracy_get();
+	location_otdoa_get();
+//      location_gnss_low_accuracy_get();
+//	location_gnss_high_accuracy_get();
 
-	location_gnss_high_accuracy_get();
+
+// We see CONFIG_LOCATION_METHOD_OTDOA from Kconfig
 
 #if defined(CONFIG_LOCATION_METHOD_WIFI)
 	location_wifi_get();
 #endif
-
 	location_gnss_periodic_get();
-
 	return 0;
 }
